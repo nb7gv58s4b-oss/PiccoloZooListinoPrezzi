@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Listino prezzi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #EDF1F2;
+    --surface: #FFFFFF;
+    --ink: #13292F;
+    --muted: #55696F;
+    --line: #CBD6D9;
+    --accent: #0E6B6E;
+    --accent-ink: #FFFFFF;
+    --tag: #FFD23F;
+    --tag-ink: #1B1A0E;
+    --danger: #B3261E;
+    --display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+    --body: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1A1D;
+      --surface: #172529;
+      --ink: #E6F0F1;
+      --muted: #9BB0B5;
+      --line: #2B3E43;
+      --accent: #4FC3C6;
+      --accent-ink: #06282A;
+      --danger: #FF8A80;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1A1D;
+    --surface: #172529;
+    --ink: #E6F0F1;
+    --muted: #9BB0B5;
+    --line: #2B3E43;
+    --accent: #4FC3C6;
+    --accent-ink: #06282A;
+    --danger: #FF8A80;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  .page { max-width: 1040px; margin: 0 auto; padding: 28px 20px 56px; }
+  h1, h2 { font-family: var(--display); margin: 0; letter-spacing: -0.01em; }
+  h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); font-weight: 800; line-height: 1.05; }
+  h2 { font-size: 1.25rem; font-weight: 600; }
+  .lead { color: var(--muted); margin: 8px 0 0; max-width: 60ch; }
+
+  section { margin-top: 28px; }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px;
+    margin-top: 12px;
+  }
+
+  label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; }
+  input, select {
+    width: 100%;
+    font: inherit;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    min-height: 44px;
+  }
+  input:focus-visible, select:focus-visible, button:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Menu IVA: dimensioni e contrasto più affidabili sui browser mobile */
+  select.iva-select {
+    appearance: auto;
+    -webkit-appearance: menulist;
+    min-height: 46px;
+    font-size: 16px;
+    color: var(--ink);
+    background-color: var(--surface);
+    color-scheme: light dark;
+  }
+
+  select.iva-select option {
+    font-size: 16px;
+    color: #13292F;
+    background: #FFFFFF;
+  }
+
+  @media (max-width: 600px) {
+    select.iva-select {
+      width: 100%;
+      min-height: 48px;
+      padding: 11px 12px;
+      border-width: 2px;
+      touch-action: manipulation;
+    }
+  }
+
+  .rules { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+  .pct-row { display: grid; grid-template-columns: 1fr 84px; gap: 8px; }
+  .hint { color: var(--muted); font-size: 0.92rem; margin: 14px 0 0; }
+  .hint.error { color: var(--danger); font-weight: 600; }
+
+  .entry { display: grid; gap: 20px; grid-template-columns: 1fr; align-items: stretch; }
+  @media (min-width: 820px) { .entry { grid-template-columns: 1.1fr 1fr; } }
+  .fields { display: grid; gap: 16px; grid-template-columns: 1fr 1fr; align-content: start; }
+  .fields .wide { grid-column: 1 / -1; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; grid-column: 1 / -1; }
+
+  button {
+    font: inherit;
+    font-weight: 600;
+    border-radius: 8px;
+    min-height: 44px;
+    padding: 10px 18px;
+    cursor: pointer;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+  }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  button.quiet { min-height: 36px; padding: 6px 12px; font-size: 0.9rem; }
+  button.danger { color: var(--danger); }
+
+  /* Cartellino del prezzo: l'elemento centrale della pagina */
+  .tag-wrap { display: flex; align-items: center; justify-content: center; }
+  .tag {
+    position: relative;
+    width: 100%;
+    max-width: 380px;
+    background: var(--tag);
+    color: var(--tag-ink);
+    border-radius: 10px 26px 26px 10px;
+    padding: 22px 26px 22px 62px;
+    box-shadow: 0 1px 0 rgba(0,0,0,.18);
+  }
+  .tag::before {
+    content: "";
+    position: absolute;
+    left: 20px; top: 50%;
+    width: 18px; height: 18px;
+    margin-top: -9px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid rgba(0,0,0,.35);
+  }
+  .tag-name { font-weight: 600; font-size: 1rem; overflow-wrap: anywhere; min-height: 1.5em; }
+  .tag-price {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(2.6rem, 8vw, 3.6rem);
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+    margin: 4px 0 8px;
+  }
+  .tag-meta { font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+  .tag-meta div { display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid rgba(0,0,0,.2); padding: 4px 0; }
+
+  .list-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .count { color: var(--muted); font-size: 0.95rem; }
+  .scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 640px; }
+  th, td { padding: 12px 10px; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; vertical-align: middle; }
+  th { font-size: 0.9rem; font-weight: 600; color: var(--muted); }
+  th:first-child, td:first-child { text-align: left; }
+  td.name { font-weight: 600; overflow-wrap: anywhere; }
+  td.public { font-family: var(--display); font-weight: 800; font-size: 1.2rem; }
+  td.rowbtns { white-space: nowrap; text-align: right; }
+  .empty { color: var(--muted); padding: 24px 4px 8px; }
+  .saved-note { color: var(--muted); font-size: 0.85rem; margin-top: 16px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>Listino prezzi</h1>
+    <p class="lead">Scrivi il prezzo di acquisto: il prezzo da mettere sullo scaffale si calcola da solo, con ricarico e IVA.</p>
+  </header>
+
+  <section aria-labelledby="t-rules">
+    <h2 id="t-rules">Regole di prezzo</h2>
+    <div class="panel">
+      <div class="rules">
+        <div>
+          <label for="pct">Guadagno</label>
+          <div class="pct-row">
+            <select id="mode" aria-label="Tipo di guadagno">
+              <option value="ricarico">Ricarico sul costo</option>
+              <option value="margine">Margine sul prezzo</option>
+            </select>
+            <input id="pct" type="text" inputmode="decimal" autocomplete="off" aria-label="Percentuale di guadagno">
+          </div>
+        </div>
+        <div>
+          <label for="iva-default">IVA predefinita</label>
+          <select id="iva-default" class="iva-select" aria-label="Aliquota IVA predefinita">
+        <option value="22">22%</option>
+        <option value="10">10%</option>
+        <option value="5">5%</option>
+        <option value="4">4%</option>
+        <option value="0">0% (esente)</option>
+      </select>
+        </div>
+        <div>
+          <label for="iva-acq">Il prezzo di acquisto è</label>
+          <select id="iva-acq">
+            <option value="escl">IVA esclusa</option>
+            <option value="incl">IVA inclusa</option>
+          </select>
+        </div>
+        <div>
+          <label for="round">Arrotonda il prezzo al pubblico</label>
+          <select id="round">
+            <option value="none">Nessun arrotondamento</option>
+            <option value="5">Ai 5 centesimi</option>
+            <option value="10">Ai 10 centesimi</option>
+            <option value="90">Che finisce con ,90</option>
+            <option value="99">Che finisce con ,99</option>
+          </select>
+        </div>
+      </div>
+      <p class="hint" id="rules-hint"></p>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-new">
+    <h2 id="t-new">Nuovo articolo</h2>
+    <div class="panel">
+      <div class="entry">
+        <form id="item-form" class="fields" autocomplete="off">
+          <div class="wide">
+            <label for="f-name">Articolo</label>
+            <input id="f-name" type="text" maxlength="80" placeholder="Es. Caffè macinato 250 g">
+          </div>
+          <div>
+            <label for="f-cost">Prezzo di acquisto (€)</label>
+            <input id="f-cost" type="text" inputmode="decimal" placeholder="0,00">
+          </div>
+          <div>
+            <label for="f-iva">IVA dell'articolo</label>
+            <select id="f-iva" class="iva-select" aria-label="Aliquota IVA dell'articolo">
+        <option value="22">22%</option>
+        <option value="10">10%</option>
+        <option value="5">5%</option>
+        <option value="4">4%</option>
+        <option value="0">0% (esente)</option>
+      </select>
+          </div>
+          <div class="actions">
+            <button type="button" class="primary" id="f-submit">Aggiungi al listino</button>
+            <button type="button" id="f-cancel" hidden>Annulla modifica</button>
+          </div>
+          <p class="hint error wide" id="f-error" role="alert" hidden></p>
+        </form>
+
+        <div class="tag-wrap">
+          <div class="tag" aria-live="polite">
+            <div class="tag-name" id="tag-name">Nome articolo</div>
+            <div class="tag-price" id="tag-price">0,00 €</div>
+            <div class="tag-meta">
+              <div><span>Prezzo senza IVA</span><span id="tag-net">0,00 €</span></div>
+              <div><span>IVA</span><span id="tag-vat">0,00 €</span></div>
+              <div><span>Guadagno per pezzo</span><span id="tag-profit">0,00 €</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-list">
+    <div class="list-head">
+      <h2 id="t-list">Articoli nel listino</h2>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="panel">
+      <div class="scroll">
+        <table id="table" hidden>
+          <thead>
+            <tr>
+              <th scope="col">Articolo</th>
+              <th scope="col">Acquisto</th>
+              <th scope="col">IVA</th>
+              <th scope="col">Prezzo al pubblico</th>
+              <th scope="col">Guadagno</th>
+              <th scope="col"><span class="sr-only" style="position:absolute;left:-9999px">Azioni</span></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <p class="empty" id="empty">Il listino è vuoto. Aggiungi il primo articolo dal modulo qui sopra.</p>
+      <p class="saved-note">Il listino resta salvato in questo browser. Se cambi le regole di prezzo, tutti i prezzi si aggiornano.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var STORAGE_KEY = "listino-prezzi-v1";
+  var IVA_OPTIONS = [22, 10, 5, 4, 0];
+  var eur = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" });
+  var pctFmt = new Intl.NumberFormat("it-IT", { maximumFractionDigits: 1 });
+
+  var state = {
+    settings: { mode: "ricarico", pct: 30, iva: 22, round: "none", ivaAcq: "escl" },
+    items: []
+  };
+  var editingId = null;
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      var data = JSON.parse(raw);
+      if (data && data.settings) {
+        for (var k in state.settings) {
+          if (data.settings[k] !== undefined) state.settings[k] = data.settings[k];
+        }
+      }
+      if (data && Array.isArray(data.items)) state.items = data.items;
+    } catch (e) { /* storage vuoto o non disponibile */ }
+  }
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* ignora */ }
+  }
+
+  function num(s) {
+    var n = parseFloat(String(s).replace(/\s/g, "").replace(",", "."));
+    return isFinite(n) ? n : NaN;
+  }
+  function $(id) { return document.getElementById(id); }
+
+  /* Calcolo: sempre in centesimi per evitare errori di arrotondamento */
+  function roundCents(cents, mode) {
+    cents = Math.round(cents);
+    if (mode === "5") return Math.ceil(cents / 5) * 5;
+    if (mode === "10") return Math.ceil(cents / 10) * 10;
+    if (mode === "90" || mode === "99") {
+      var end = parseInt(mode, 10);
+      return Math.ceil((cents - end) / 100) * 100 + end;
+    }
+    return cents;
+  }
+
+  function clampedPct() {
+    var p = state.settings.pct;
+    if (!isFinite(p) || p < 0) p = 0;
+    if (state.settings.mode === "margine" && p > 99) p = 99;
+    return p;
+  }
+
+  function compute(cost, iva) {
+    var s = state.settings;
+    var costNet = s.ivaAcq === "incl" ? cost / (1 + iva / 100) : cost;
+    var p = clampedPct();
+    var sellNet = s.mode === "margine" ? costNet / (1 - p / 100) : costNet * (1 + p / 100);
+    var gross = sellNet * (1 + iva / 100);
+    var pubCents = roundCents(gross * 100, s.round);
+    var pub = pubCents / 100;
+    var netFromPub = pub / (1 + iva / 100);
+    return {
+      costNet: costNet,
+      net: netFromPub,
+      vat: pub - netFromPub,
+      pub: pub,
+      profit: netFromPub - costNet,
+      profitPct: costNet > 0 ? (netFromPub - costNet) / costNet * 100 : 0
+    };
+  }
+
+  /* Regole */
+  function fillIvaSelect(sel, value) {
+    var wanted = String(Number(value));
+    var found = false;
+
+    Array.prototype.forEach.call(sel.options, function (o) {
+      var selected = o.value === wanted;
+      o.selected = selected;
+      if (selected) found = true;
+    });
+
+    if (!found && sel.options.length) {
+      sel.selectedIndex = 0;
+    }
+  }
+
+  function renderRulesHint() {
+    var s = state.settings;
+    var el = $("rules-hint");
+    var raw = s.pct;
+    var invalid = !isFinite(raw) || raw < 0 || (s.mode === "margine" && raw >= 100);
+    if (invalid) {
+      el.className = "hint error";
+      el.textContent = s.mode === "margine"
+        ? "Il margine deve essere un numero da 0 a 99."
+        : "Il ricarico deve essere un numero da 0 in su.";
+      return;
+    }
+    el.className = "hint";
+    var r = compute(10, s.iva);
+    var label = s.mode === "margine" ? "margine" : "ricarico";
+    el.textContent = "Con " + label + " del " + pctFmt.format(raw) + "% e IVA al " + s.iva +
+      "%, un articolo che costa " + eur.format(10) + " si vende a " + eur.format(r.pub) +
+      " e ti lascia " + eur.format(r.profit) + " di guadagno.";
+  }
+
+  function syncRulesInputs() {
+    $("mode").value = state.settings.mode;
+    $("pct").value = isFinite(state.settings.pct) ? String(state.settings.pct).replace(".", ",") : "";
+    $("iva-acq").value = state.settings.ivaAcq;
+    $("round").value = state.settings.round;
+    fillIvaSelect($("iva-default"), state.settings.iva);
+  }
+
+  function onRulesChange() {
+    var s = state.settings;
+    s.mode = $("mode").value;
+    s.pct = num($("pct").value);
+    s.iva = Number($("iva-default").value);
+    s.ivaAcq = $("iva-acq").value;
+    s.round = $("round").value;
+    if (!editingId) $("f-iva").value = String(s.iva);
+    save();
+    renderRulesHint();
+    renderPreview();
+    renderTable();
+  }
+
+  /* Anteprima cartellino */
+  function renderPreview() {
+    var name = $("f-name").value.trim();
+    var cost = num($("f-cost").value);
+    var iva = Number($("f-iva").value);
+    $("tag-name").textContent = name || "Nome articolo";
+    if (!isFinite(cost) || cost < 0) {
+      $("tag-price").textContent = eur.format(0);
+      $("tag-net").textContent = eur.format(0);
+      $("tag-vat").textContent = eur.format(0);
+      $("tag-profit").textContent = eur.format(0);
+      return;
+    }
+    var r = compute(cost, iva);
+    $("tag-price").textContent = eur.format(r.pub);
+    $("tag-net").textContent = eur.format(r.net);
+    $("tag-vat").textContent = eur.format(r.vat);
+    $("tag-profit").textContent = eur.format(r.profit) + " (" + pctFmt.format(r.profitPct) + "%)";
+  }
+
+  /* Tabella */
+  function cell(tr, text, cls) {
+    var td = document.createElement("td");
+    td.textContent = text;
+    if (cls) td.className = cls;
+    tr.appendChild(td);
+    return td;
+  }
+
+  function renderTable() {
+    var tbody = $("tbody");
+    tbody.innerHTML = "";
+    var has = state.items.length > 0;
+    $("table").hidden = !has;
+    $("empty").hidden = has;
+    $("count").textContent = has ? state.items.length + (state.items.length === 1 ? " articolo" : " articoli") : "";
+    state.items.forEach(function (it) {
+      var r = compute(it.cost, it.iva);
+      var tr = document.createElement("tr");
+      cell(tr, it.name, "name");
+      cell(tr, eur.format(it.cost));
+      cell(tr, it.iva + "%");
+      cell(tr, eur.format(r.pub), "public");
+      cell(tr, eur.format(r.profit) + " (" + pctFmt.format(r.profitPct) + "%)");
+
+      var td = document.createElement("td");
+      td.className = "rowbtns";
+      var edit = document.createElement("button");
+      edit.type = "button";
+      edit.className = "quiet";
+      edit.textContent = "Modifica";
+      edit.addEventListener("click", function () { startEdit(it.id); });
+      var del = document.createElement("button");
+      del.type = "button";
+      del.className = "quiet danger";
+      del.textContent = "Elimina";
+      del.style.marginLeft = "6px";
+      del.addEventListener("click", function () { removeItem(it.id); });
+      td.appendChild(edit);
+      td.appendChild(del);
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+    });
+  }
+
+  /* Modulo */
+  function showError(msg) {
+    var el = $("f-error");
+    el.hidden = !msg;
+    el.textContent = msg || "";
+  }
+
+  function resetForm() {
+    editingId = null;
+    $("f-name").value = "";
+    $("f-cost").value = "";
+    $("f-iva").value = String(state.settings.iva);
+    $("f-submit").textContent = "Aggiungi al listino";
+    $("f-cancel").hidden = true;
+    showError("");
+    renderPreview();
+  }
+
+  function startEdit(id) {
+    var it = state.items.filter(function (x) { return x.id === id; })[0];
+    if (!it) return;
+    editingId = id;
+    $("f-name").value = it.name;
+    $("f-cost").value = String(it.cost).replace(".", ",");
+    $("f-iva").value = String(it.iva);
+    $("f-submit").textContent = "Salva modifiche";
+    $("f-cancel").hidden = false;
+    showError("");
+    renderPreview();
+    $("f-name").focus();
+    $("f-name").scrollIntoView({ block: "center" });
+  }
+
+  function removeItem(id) {
+    state.items = state.items.filter(function (x) { return x.id !== id; });
+    if (editingId === id) resetForm();
+    save();
+    renderTable();
+  }
+
+  /* Salvataggio articolo: funzione separata per funzionare bene anche su browser mobile */
+  function saveItemFromForm() {
+    var name = $("f-name").value.trim();
+    var cost = num($("f-cost").value);
+    var iva = Number($("f-iva").value);
+
+    if (!name) {
+      showError("Scrivi il nome dell'articolo.");
+      $("f-name").focus();
+      return false;
+    }
+
+    if (!isFinite(cost) || cost < 0) {
+      showError("Scrivi il prezzo di acquisto come numero, per esempio 4,50.");
+      $("f-cost").focus();
+      return false;
+    }
+
+    var p = state.settings.pct;
+    if (!isFinite(p) || p < 0 || (state.settings.mode === "margine" && p >= 100)) {
+      showError("Correggi la percentuale di guadagno nelle regole di prezzo.");
+      return false;
+    }
+
+    if (editingId) {
+      state.items = state.items.map(function (x) {
+        return x.id === editingId
+          ? { id: x.id, name: name, cost: cost, iva: iva }
+          : x;
+      });
+    } else {
+      state.items.unshift({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        name: name,
+        cost: cost,
+        iva: iva
+      });
+    }
+
+    /* Aggiorna subito la schermata: il listino non dipende dalla disponibilità
+       di localStorage per essere visualizzato. */
+    renderTable();
+    resetForm();
+
+    /* Prova a rendere persistente il listino. */
+    save();
+
+    /* Porta l'utente direttamente al listino appena aggiunge un articolo. */
+    var listSection = $("table");
+    if (listSection && state.items.length) {
+      try {
+        listSection.scrollIntoView({ behavior: "smooth", block: "center" });
+      } catch (e) {
+        listSection.scrollIntoView(true);
+      }
+    }
+
+    return true;
+  }
+
+  /* Il salvataggio è gestito direttamente dal pulsante:
+     evita differenze tra Safari mobile, Chrome mobile e PC. */
+  $("f-submit").addEventListener("click", function () {
+    saveItemFromForm();
+  });
+
+  $("f-cancel").addEventListener("click", resetForm);
+  ["f-name", "f-cost"].forEach(function (id) { $(id).addEventListener("input", renderPreview); });
+  $("f-iva").addEventListener("change", renderPreview);
+  ["mode", "iva-acq", "round", "iva-default"].forEach(function (id) { $(id).addEventListener("change", onRulesChange); });
+  $("pct").addEventListener("input", onRulesChange);
+
+  /* Avvio */
+  load();
+  syncRulesInputs();
+  fillIvaSelect($("f-iva"), state.settings.iva);
+  renderRulesHint();
+  renderPreview();
+  renderTable();
+})();
+</script>
+</body>
+</html>
